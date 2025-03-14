@@ -65,7 +65,13 @@ export default function Navbar({ user }: { user: any }) {
                 >
                   <span className="sr-only">Open user menu</span>
                   <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 font-medium">
-                    {user.email?.charAt(0).toUpperCase() || "U"}
+                    {user.user_metadata?.given_name
+                      ? user.user_metadata.given_name.charAt(0).toUpperCase()
+                      : user.user_metadata?.name
+                      ? user.user_metadata.name.charAt(0).toUpperCase()
+                      : user.user_metadata?.full_name
+                      ? user.user_metadata.full_name.charAt(0).toUpperCase()
+                      : user.email?.charAt(0).toUpperCase() || "U"}
                   </div>
                 </button>
 
@@ -77,7 +83,15 @@ export default function Navbar({ user }: { user: any }) {
                     aria-labelledby="user-menu-button"
                     tabIndex={-1}
                   >
-                    <div className="px-4 py-2 text-sm text-gray-700">
+                    <div className="px-4 py-2 text-sm text-gray-700 border-b">
+                      {user.user_metadata?.given_name &&
+                      user.user_metadata?.family_name
+                        ? `${user.user_metadata.given_name} ${user.user_metadata.family_name}`
+                        : user.user_metadata?.name ||
+                          user.user_metadata?.full_name ||
+                          user.email}
+                    </div>
+                    <div className="px-4 py-1 text-xs text-gray-500">
                       {user.email}
                     </div>
                     <Link

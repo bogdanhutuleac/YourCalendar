@@ -28,6 +28,22 @@ export default async function SettingsPage() {
             <p className="font-medium">{user.user_metadata.full_name}</p>
           </div>
         )}
+        {user.user_metadata?.name && (
+          <div className="mb-4">
+            <p className="text-gray-600">Name</p>
+            <p className="font-medium">{user.user_metadata.name}</p>
+          </div>
+        )}
+        {(user.user_metadata?.given_name ||
+          user.user_metadata?.family_name) && (
+          <div className="mb-4">
+            <p className="text-gray-600">First and Last Name</p>
+            <p className="font-medium">
+              {user.user_metadata?.given_name || ""}{" "}
+              {user.user_metadata?.family_name || ""}
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="bg-white shadow-md rounded-lg p-6">

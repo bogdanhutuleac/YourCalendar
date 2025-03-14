@@ -30,22 +30,28 @@ export class CalendarService {
    * Get all connected calendars for the current user
    */
   async getConnectedCalendars(): Promise<ConnectedCalendar[]> {
-    const { data: user } = await this.supabase.auth.getUser();
-    if (!user) {
-      throw new Error("User not authenticated");
-    }
+    try {
+      // Try to fetch Google calendars
+      const response = await fetch("/api/google/calendar/list");
 
-    // In a real implementation, this would fetch from your database
-    // For now, return mock data
-    return [
-      {
-        id: "google-calendar-1",
-        provider: "google",
-        name: "Work Calendar",
-        email: "user@example.com",
-        primary: true,
-      },
-    ];
+      if (!response.ok) {
+        const data = await response.json();
+
+        // If the calendar is not connected, return an empty array
+        if (data.code === "not_connected") {
+          return [];
+        }
+
+        throw new Error(data.error || "Failed to fetch calendars");
+      }
+
+      const { calendars } = await response.json();
+      return calendars;
+    } catch (error) {
+      console.error("Error fetching calendars:", error);
+      // Return an empty array if there's an error
+      return [];
+    }
   }
 
   /**
@@ -54,27 +60,33 @@ export class CalendarService {
   async connectCalendar(
     provider: CalendarProvider
   ): Promise<ConnectedCalendar> {
-    // In a real implementation, this would:
-    // 1. Redirect to OAuth flow
-    // 2. Handle the callback
-    // 3. Store the tokens in your database
-    // 4. Return the connected calendar
-
-    // For now, simulate the OAuth flow with a mock implementation
     if (provider === "google") {
-      // In a real app, this would redirect to Google OAuth
-      console.log("Redirecting to Google OAuth...");
+      try {
+        // Get the auth URL
+        const response = await fetch("/api/google/calendar/auth");
 
-      // Mock the connected calendar that would be returned after OAuth
-      return {
-        id: `${provider}-calendar-${Date.now()}`,
-        provider,
-        name: `${
-          provider.charAt(0).toUpperCase() + provider.slice(1)
-        } Calendar`,
-        email: "user@example.com",
-        primary: true,
-      };
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || "Failed to get auth URL");
+        }
+
+        const { url } = await response.json();
+
+        // Redirect to the auth URL
+        window.location.href = url;
+
+        // This is a placeholder return since the user will be redirected
+        return {
+          id: "redirecting",
+          provider,
+          name: "Redirecting...",
+          email: "",
+          primary: false,
+        };
+      } catch (error) {
+        console.error("Error connecting to Google Calendar:", error);
+        throw error;
+      }
     }
 
     throw new Error(`Calendar provider ${provider} not supported`);
@@ -88,42 +100,35 @@ export class CalendarService {
     startDate: Date,
     endDate: Date
   ): Promise<CalendarEvent[]> {
-    // In a real implementation, this would fetch events from the calendar API
-    // For now, return mock data
+    try {
+      // Fetch events from the API
+      const url = new URL(
+        "/api/google/calendar/events",
+        window.location.origin
+      );
+      url.searchParams.append("calendarId", calendarId);
+      url.searchParams.append("timeMin", startDate.toISOString());
+      url.searchParams.append("timeMax", endDate.toISOString());
 
-    // Generate some mock events
-    const events: CalendarEvent[] = [];
-    const currentDate = new Date(startDate);
+      const response = await fetch(url.toString());
 
-    while (currentDate <= endDate) {
-      // Add 1-3 events per day
-      const eventsPerDay = Math.floor(Math.random() * 3) + 1;
-
-      for (let i = 0; i < eventsPerDay; i++) {
-        const startHour = 9 + Math.floor(Math.random() * 8); // Between 9 AM and 5 PM
-        const durationHours = Math.floor(Math.random() * 2) + 1; // 1-2 hours
-
-        const eventStartTime = new Date(currentDate);
-        eventStartTime.setHours(startHour, 0, 0, 0);
-
-        const eventEndTime = new Date(eventStartTime);
-        eventEndTime.setHours(eventStartTime.getHours() + durationHours);
-
-        events.push({
-          id: `event-${Date.now()}-${i}`,
-          title: `Mock Event ${i + 1}`,
-          description: "This is a mock calendar event",
-          startTime: eventStartTime,
-          endTime: eventEndTime,
-          calendarId,
-        });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to fetch events");
       }
 
-      // Move to next day
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
+      const { events } = await response.json();
 
-    return events;
+      // Convert string dates to Date objects
+      return events.map((event: any) => ({
+        ...event,
+        startTime: new Date(event.startTime),
+        endTime: new Date(event.endTime),
+      }));
+    } catch (error) {
+      console.error("Error fetching events:", error);
+      return [];
+    }
   }
 
   /**
@@ -133,7 +138,7 @@ export class CalendarService {
     calendarId: string,
     event: Omit<CalendarEvent, "id" | "calendarId">
   ): Promise<CalendarEvent> {
-    // In a real implementation, this would create an event in the calendar API
+    // This would be implemented to create an event via the API
     // For now, return a mock created event
     return {
       id: `event-${Date.now()}`,
@@ -146,11 +151,7 @@ export class CalendarService {
    * Disconnect a calendar
    */
   async disconnectCalendar(calendarId: string): Promise<void> {
-    // In a real implementation, this would:
-    // 1. Revoke the OAuth tokens
-    // 2. Remove the calendar from your database
-
+    // This would be implemented to disconnect a calendar via the API
     console.log(`Disconnecting calendar ${calendarId}...`);
-    // Mock implementation - no return value needed
   }
 }

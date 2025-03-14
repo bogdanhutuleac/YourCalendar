@@ -16,13 +16,20 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // Configure Turbopack
+  turbo: {
+    // Turbopack configuration options
+    resolveAlias: {
+      // You can add any aliases here if needed
+    },
+  },
   // Completely disable WebSockets for development
-  webSocketServerOptions: false,
+  // webSocketServerOptions: false,
   experimental: {
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
-    fastRefresh: false,
+    // fastRefresh: false,
   },
   webpack: (config, { isServer }) => {
     // This will ignore socket.io requests in the browser
@@ -40,9 +47,9 @@ const nextConfig = {
     return config;
   },
   // Disable HMR completely
-  devIndicators: {
-    buildActivity: false,
-  },
+  // devIndicators: {
+  //   buildActivity: false,
+  // },
 };
 
 mergeConfig(nextConfig, userConfig);

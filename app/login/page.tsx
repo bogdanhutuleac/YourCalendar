@@ -28,6 +28,12 @@ export default async function LoginPage() {
                   provider: "google",
                   options: {
                     redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+                    queryParams: {
+                      access_type: "offline",
+                      prompt: "consent",
+                      scope:
+                        "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile",
+                    },
                   },
                 });
                 if (error) {
