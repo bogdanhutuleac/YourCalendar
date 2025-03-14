@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -34,7 +34,11 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import type { BookingType } from "@/types/booking-type";
-import { createBookingType, updateBookingType } from "@/lib/booking-types";
+import {
+  createBookingType,
+  updateBookingType,
+  isSlugAvailable,
+} from "@/lib/booking-types";
 import { toast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
@@ -61,6 +65,7 @@ interface BookingTypeFormProps {
 export function BookingTypeForm({ bookingType }: BookingTypeFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCheckingSlug, setIsCheckingSlug] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -74,9 +79,87 @@ export function BookingTypeForm({ bookingType }: BookingTypeFormProps) {
     },
   });
 
+  // Generate slug from name
+  const generateSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-");
+  };
+
+  // Watch the name field to auto-generate slug
+  const watchName = form.watch("name");
+  const watchSlug = form.watch("slug");
+
+  // Auto-generate slug when name changes and slug is empty or hasn't been manually edited
+  useEffect(() => {
+    if (
+      watchName &&
+      (!watchSlug || watchSlug === generateSlug(form.getValues("name")))
+    ) {
+      form.setValue("slug", generateSlug(watchName), { shouldValidate: true });
+    }
+  }, [watchName, form, watchSlug]);
+
+  // Check slug availability
+  const checkSlugAvailability = async (slug: string) => {
+    if (!slug) return;
+
+    setIsCheckingSlug(true);
+    try {
+      const available = await isSlugAvailable(slug, bookingType?.id);
+      if (!available) {
+        form.setError("slug", {
+          type: "manual",
+          message: "This URL is already taken. Please choose another one.",
+        });
+      } else {
+        form.clearErrors("slug");
+      }
+    } catch (error) {
+      console.error("Failed to check slug availability:", error);
+    } finally {
+      setIsCheckingSlug(false);
+    }
+  };
+
+  // Debounce slug check to avoid too many requests
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (watchSlug && form.getFieldState("slug").isDirty) {
+        checkSlugAvailability(watchSlug);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [watchSlug, form]);
+
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     try {
+      // Final check for slug availability
+      if (!bookingType) {
+        const available = await isSlugAvailable(data.slug);
+        if (!available) {
+          form.setError("slug", {
+            type: "manual",
+            message: "This URL is already taken. Please choose another one.",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      } else {
+        const available = await isSlugAvailable(data.slug, bookingType.id);
+        if (!available) {
+          form.setError("slug", {
+            type: "manual",
+            message: "This URL is already taken. Please choose another one.",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       if (bookingType) {
         await updateBookingType(bookingType.id, data);
         toast({
@@ -141,7 +224,14 @@ export function BookingTypeForm({ bookingType }: BookingTypeFormProps) {
                       <span className="text-sm text-muted-foreground mr-2">
                         tidycal.com/
                       </span>
-                      <Input placeholder="your-meeting-name" {...field} />
+                      <div className="relative w-full">
+                        <Input placeholder="your-meeting-name" {...field} />
+                        {isCheckingSlug && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </FormControl>
                   <FormDescription>
