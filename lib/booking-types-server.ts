@@ -1,5 +1,5 @@
 import type { BookingType } from "@/types/booking-type";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/server";
 
 // Helper function to convert database booking type to our BookingType interface
 function mapDbBookingTypeToBookingType(dbBookingType: any): BookingType {
@@ -16,9 +16,9 @@ function mapDbBookingTypeToBookingType(dbBookingType: any): BookingType {
   };
 }
 
-// Get all booking types for the current user
-export async function getBookingTypes(): Promise<BookingType[]> {
-  const supabase = createClient();
+// Get all booking types for the current user (server-side)
+export async function getBookingTypesServer(): Promise<BookingType[]> {
+  const supabase = await createClient();
 
   const { data: bookingTypes, error } = await supabase
     .from("booking_types")
@@ -33,11 +33,11 @@ export async function getBookingTypes(): Promise<BookingType[]> {
   return bookingTypes.map(mapDbBookingTypeToBookingType);
 }
 
-// Get a booking type by ID
-export async function getBookingTypeById(
+// Get a booking type by ID (server-side)
+export async function getBookingTypeByIdServer(
   id: string
 ): Promise<BookingType | null> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: bookingType, error } = await supabase
     .from("booking_types")
@@ -57,11 +57,11 @@ export async function getBookingTypeById(
   return bookingType ? mapDbBookingTypeToBookingType(bookingType) : null;
 }
 
-// Create a new booking type
-export async function createBookingType(
+// Create a new booking type (server-side)
+export async function createBookingTypeServer(
   data: Partial<BookingType>
 ): Promise<BookingType> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: newBookingType, error } = await supabase
     .from("booking_types")
@@ -84,12 +84,12 @@ export async function createBookingType(
   return mapDbBookingTypeToBookingType(newBookingType);
 }
 
-// Update an existing booking type
-export async function updateBookingType(
+// Update an existing booking type (server-side)
+export async function updateBookingTypeServer(
   id: string,
   data: Partial<BookingType>
 ): Promise<BookingType> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: updatedBookingType, error } = await supabase
     .from("booking_types")
@@ -113,9 +113,9 @@ export async function updateBookingType(
   return mapDbBookingTypeToBookingType(updatedBookingType);
 }
 
-// Delete a booking type
-export async function deleteBookingType(id: string): Promise<void> {
-  const supabase = createClient();
+// Delete a booking type (server-side)
+export async function deleteBookingTypeServer(id: string): Promise<void> {
+  const supabase = await createClient();
 
   const { error } = await supabase.from("booking_types").delete().eq("id", id);
 
@@ -125,12 +125,12 @@ export async function deleteBookingType(id: string): Promise<void> {
   }
 }
 
-// Toggle the active status of a booking type
-export async function toggleBookingTypeStatus(
+// Toggle the active status of a booking type (server-side)
+export async function toggleBookingTypeStatusServer(
   id: string,
   active: boolean
 ): Promise<void> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { error } = await supabase
     .from("booking_types")
@@ -143,12 +143,12 @@ export async function toggleBookingTypeStatus(
   }
 }
 
-// Check if a slug is available (not used by any other booking type for the current user)
-export async function isSlugAvailable(
+// Check if a slug is available (server-side)
+export async function isSlugAvailableServer(
   slug: string,
   excludeId?: string
 ): Promise<boolean> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   let query = supabase.from("booking_types").select("id").eq("slug", slug);
 
