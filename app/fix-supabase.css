@@ -1,0 +1,32 @@
+/* Hide Supabase Auth UI elements */
+.sbui-btn,
+.sbui-btn-container,
+.sbui-typography,
+.sbui-typography-container,
+.sbui-auth,
+.sbui-auth-container,
+.sbui-auth-ui,
+.sbui-auth-ui__container,
+.supabase-auth-ui,
+.supabase-auth-ui__container,
+.supabase-ui-auth,
+.supabase-auth-ui__button,
+.supabase-auth-ui__dropdown,
+.supabase-auth-ui__menu,
+[data-supabase-auth="true"],
+[data-supabase-auth-container="true"],
+[data-supabase-auth-menu="true"],
+[data-supabase-auth-dropdown="true"],
+[data-supabase-auth-button="true"],
+[data-supabase-auth-button-container="true"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+  height: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+}
